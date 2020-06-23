@@ -7,8 +7,24 @@ import axios from 'axios';
 class EditPage extends React.Component {
     constructor(props) {
         super(props)
+        this.state = {
+            name: '',
+            email: '',
+            status: ''
+        }
     }
     
+    componentDidMount(){
+        axios.get(`http://localhost:8000/getLead/${localStorage.getItem('name')}`)
+            .then(data => {
+                let leadInfo = data.data[0]
+                this.setState({
+                    name: leadInfo.name,
+                    email: leadInfo.email,
+                    status: leadInfo.status
+                })
+            })
+    }
     render() {
         const layout = {
             labelCol: {
@@ -42,13 +58,19 @@ class EditPage extends React.Component {
             console.log('Failed:', errorInfo);
         };
 
+        let { name, email, status } = this.state
+
+        console.log(this.state)
+
         return (
             <>
                 <Form
                     {...layout}
                     name="basic"
                     initialValues={{
-                        remember: true,
+                        name,
+                        email,
+                        status
                     }}
                     onFinish={onFinish}
                     onFinishFailed={onFinishFailed}

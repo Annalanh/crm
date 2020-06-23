@@ -15,7 +15,7 @@ class App extends React.Component{
               <Route exact path="/" component={ManagePage}/>
               <Route exact path="/edit" component={EditPage}/>
             </Switch>
-        </BrowserRouter>
+          </BrowserRouter>
         </>
       )
     }
