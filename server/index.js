@@ -20,6 +20,7 @@ mongoose.connect('mongodb://localhost/test', {useNewUrlParser: true}, (err) => {
         LeadModel.create({name: 'my', email: 'thao@gmail.com'}, (err, data) => {
             if(err) console.log(err)
             else console.log(data)
+            
         })
     }
 });
