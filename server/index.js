@@ -28,19 +28,13 @@ mongoose.connect('mongodb://localhost/test', { useNewUrlParser: true }, (err) =>
 
 //get data
 app.get('/data/:current/:pageSize', (req, res) => {
-    LeadModel.find({}, function (err, data) {
-        if (err) console.log(err)
-        else {
-            let current = Number(req.params.current)
-            let pageSize = Number(req.params.pageSize)
-
-            let firstRecordIndex = pageSize * (current - 1)
-
-            let returnData = data.slice(firstRecordIndex, firstRecordIndex + pageSize)
-
-            res.send({ results: returnData, totalCount: data.length })
-
-        }
+    let current = Number(req.params.current)
+    let pageSize = Number(req.params.pageSize)    
+    let skip = pageSize*(current - 1)
+    let totalCount = 0
+    LeadModel.count({}, (err, number) => { totalCount = number})
+    LeadModel.find({}).skip(skip).limit(pageSize).exec((err, data) => {
+        res.send({ results: data, totalCount })
     })
 })
 
@@ -82,12 +76,12 @@ app.post("/sendMail", (req, res) => {
         },
     };
     sgMail
-    .send(msg)
-    .then(() => { }, error => {
-        console.error(error);
-    });
+        .send(msg)
+        .then(() => { }, error => {
+            console.error(error);
+        });
 
-    res.send({status: 1})
+    res.send({ status: 1 })
 })
 
 app.listen(8000)
