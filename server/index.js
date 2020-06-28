@@ -27,15 +27,23 @@ mongoose.connect('mongodb://localhost/test', { useNewUrlParser: true }, (err) =>
 });
 
 //get data
-app.get('/data/:current/:pageSize', (req, res) => {
-    let current = Number(req.params.current)
-    let pageSize = Number(req.params.pageSize)    
-    let skip = pageSize*(current - 1)
-    let totalCount = 0
-    LeadModel.count({}, (err, number) => { totalCount = number})
-    LeadModel.find({}).skip(skip).limit(pageSize).exec((err, data) => {
-        res.send({ results: data, totalCount })
+app.get('/data', (req, res) => {
+    let current = Number(req.query.current)
+    let pageSize = Number(req.query.pageSize)
+    let filterInfo = {}
+
+    if (req.query.status != 'null') {
+        filterInfo.status = req.query.status
+    }
+
+    let skip = pageSize * (current - 1)
+
+    LeadModel.count(filterInfo, (err, number) => {
+        LeadModel.find(filterInfo).skip(skip).limit(pageSize).exec((err, data) => {
+            res.send({ results: data, totalCount: number })
+        })
     })
+
 })
 
 //update lead

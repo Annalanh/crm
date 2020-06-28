@@ -1,9 +1,10 @@
 import React from 'react';
 import logo from './logo.svg';
-import { Table, Space, Button } from 'antd';
+import { Table, Space, Button, Select } from 'antd';
 import axios from 'axios';
 import 'antd/dist/antd.css';
 
+const { Option } = Select;
 class ManagePage extends React.Component {
   constructor(props) {
     super(props)
@@ -11,26 +12,28 @@ class ManagePage extends React.Component {
       data: [],
       pagination: {
         current: 1,
-        pageSize: 2,
-        pageSizeOptions: ['2', '4'],
+        pageSize: 5,
+        pageSizeOptions: ['5', '10', '20', '40', '100'],
         showSizeChanger: true,
-        total:'20'
+        total: '20'
       },
       loading: false,
-      filteredInfo: null
+      filters: {
+        status: null
+      }
     }
   }
 
   componentDidMount() {
-    const { pagination } = this.state;
-    this.fetch({ pagination });
+    const { pagination, filters } = this.state;
+    this.fetch({ pagination, filters });
   }
 
   fetch = (params = {}) => {
-    this.setState({ 
-      loading: true 
+    this.setState({
+      loading: true
     });
-    axios.get(`http://localhost:8000/data/${params.pagination.current}/${params.pagination.pageSize}`).then(data => {
+    axios.get(`http://localhost:8000/data?current=${params.pagination.current}&pageSize=${params.pagination.pageSize}&status=${params.filters.status}`).then(data => {
       this.setState({
         loading: false,
         data: data.data.results,
@@ -38,26 +41,50 @@ class ManagePage extends React.Component {
           ...params.pagination,
           total: data.data.totalCount,
         },
+        filters: {
+          ...params.filters
+        }
       });
     });
   };
 
   handleTableChange = (pagination, filters, sorter) => {
-    this.setState({ 
+    this.setState({
       filteredInfo: filters
     });
     this.fetch({
       sortField: sorter.field,
       sortOrder: sorter.order,
       pagination,
-      ...filters,
+      filters: this.state.filters
     });
   };
 
+  handleFilter = (value) => {
+    let pagination = {
+      ...this.state.pagination,
+      current: 1
+    }
+    let filters = {
+      ...this.state.filters,
+      status: value
+    }
+    this.fetch({ pagination, filters })
+  }
+
+  handleClearFilter = () => {
+    let pagination = {
+      ...this.state.pagination,
+      current: 1
+    }
+    let filters = {
+      status: null
+    }
+    this.fetch({ pagination, filters })
+  }
+
   render() {
     let { data, pagination, loading } = this.state;
-    let { filteredInfo } = this.state;
-    filteredInfo = filteredInfo || {};
     let columns = [
       {
         title: 'Name',
@@ -72,36 +99,28 @@ class ManagePage extends React.Component {
       {
         title: 'Status',
         dataIndex: 'status',
-        filters: [
-          { text: 'L1', value: 'L1' },
-          { text: 'L2', value: 'L2' },
-          { text: 'L3', value: 'L3' },
-          { text: 'L4', value: 'L4' },
-        ],
-        filteredValue: filteredInfo.status || null,
-        onFilter: (value, record) => {console.log(record.status.includes(value))},
         width: '20%',
-        ellipsis: true,
+
       },
       {
         title: 'Action',
         dataIndex: 'action',
         render: (text, record) => (
           <Space size="middle">
-            <a onClick= {() => {
-              axios.post('http://localhost:8000/sendMail', { email: record.email, name: record.name  })
-              .then(res => {
-                console.log(res)
-                if(res.data.status == 1) {
-                  alert("Email sent!")
-                }else{
-                  alert("Fail to send email!")
-                }
-              })
+            <a onClick={() => {
+              axios.post('http://localhost:8000/sendMail', { email: record.email, name: record.name })
+                .then(res => {
+                  console.log(res)
+                  if (res.data.status == 1) {
+                    alert("Email sent!")
+                  } else {
+                    alert("Fail to send email!")
+                  }
+                })
             }}>Send mail</a>
-            <a onClick= {() => {
+            <a onClick={() => {
               localStorage.setItem('name', record.name)
-              this.props.history.push("/edit") 
+              this.props.history.push("/edit")
             }}>Edit</a>
           </Space>
         ),
@@ -110,6 +129,16 @@ class ManagePage extends React.Component {
 
     return (
       <>
+        <Space style={{ marginBottom: 16, marginTop: 16 }}>
+          <Select defaultValue="all" style={{ width: 120 }} onChange={this.handleFilter}>
+            <Option value="all">Tất cả</Option>
+            <Option value="L1">L1</Option>
+            <Option value="L2">L2</Option>
+            <Option value="L3">L3</Option>
+            <Option value="L4">L4</Option>
+          </Select>
+          <Button onClick={this.handleClearFilter}>Clear filters</Button>
+        </Space>
         <Table
           columns={columns}
           dataSource={data}
